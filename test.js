@@ -1,24 +1,12 @@
-// test-mysql.js
-import mysql from 'mysql2/promise';
-import dotenv from 'dotenv';
+import pool from './db.js'; // your pool config file
 
-dotenv.config();
-
-async function testDB() {
+(async () => {
   try {
-    const conn = await mysql.createConnection({
-      host: process.env.DB_HOST,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-      port: process.env.DB_PORT,
-    });
-
-    console.log("✅ Connected to MySQL!");
-    await conn.end();
+    const result = await pool.query('SELECT NOW()');
+    console.log('✅ Connected to Render DB at:', result.rows[0].now);
   } catch (err) {
-    console.error("❌ DB connection error:", err);
+    console.error('❌ DB Connection Error:', err);
+  } finally {
+    pool.end();
   }
-}
-
-testDB();
+})();

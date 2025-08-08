@@ -3,6 +3,9 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+
+console.log("Loaded ENV variables:", process.env.DB_HOST, process.env.DB_USER);
+
 const { Pool } = pkg;
 
 const pool = new Pool({
