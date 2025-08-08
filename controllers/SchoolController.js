@@ -25,20 +25,11 @@ export async function addSchool(req, res){
     }
 
     try{
-        const [data] = await db.execute(
-            'INSERT INTO schools (name, address, latitude, longitude) VALUES (?, ?, ?, ?)',
+        const result = await pool.query(
+            'INSERT INTO schools (name, address, latitude, longitude) VALUES ($1, $2, $3, $4) RETURNING *',
             [name, address, latitude, longitude]
-        )
-        res.status(201).json({
-            message: "School added successfully",
-            school: {
-                id: data.insertId,
-                name,
-                address,
-                latitude,
-                longitude
-            }
-        });
+            );
+        res.status(201).json({ message: "School added successfully", data: result.rows[0] });
     }catch(err){
         console.log(err);
         res.status(500).json({message: "Server Error"});
@@ -46,28 +37,32 @@ export async function addSchool(req, res){
 }
 
 
-export async function listSchools(req, res){
-    const {latitude, longitude} = req.query;
+export async function listSchools(req, res) {
+    const { latitude, longitude } = req.query;
 
-    if(!latitude || !longitude){
-        return res.status(400).json({message: "Latitude and longitude are required"});
+    if (!latitude || !longitude) {
+        return res.status(400).json({ message: "Latitude and longitude are required" });
     }
-    try{
-        const [schools] = await db.execute("SELECT * FROM schools");
-        const sorted = schools.map((school)=>{
-            const distance = calculateDistance(
-                parseFloat(latitude),
-                parseFloat(longitude),
-                school.latitude,
-                school.longitude
-            );
-            return {...school, distance};
-        })
-        .sort((a,b)=> a.distance - b.distance);
+
+    try {
+        const result = await pool.query("SELECT * FROM schools");
+        const schools = result.rows;
+
+        const sorted = schools
+            .map((school) => {
+                const distance = calculateDistance(
+                    parseFloat(latitude),
+                    parseFloat(longitude),
+                    school.latitude,
+                    school.longitude
+                );
+                return { ...school, distance };
+            })
+            .sort((a, b) => a.distance - b.distance);
 
         res.status(200).json(sorted);
-    }catch(err){
-        console.log(err);
-        res.status(501).json({message: "Failed to list the schools"})
+    } catch (err) {
+        console.error(err);
+        res.status(501).json({ message: "Failed to list the schools" });
     }
 }
